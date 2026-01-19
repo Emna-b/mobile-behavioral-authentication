@@ -1,171 +1,116 @@
-# Mobile Behavioral Authentication – User Identification from Sensor Data
+## Mobile Behavioral Authentication – User Identification from Sensor Data
+
 Overview
 
-This project focuses on identifying users based on mobile sensor data by modeling behavioral movement patterns. Each user generates multiple sessions composed of raw sensor events (accelerometer, gyroscope, magnetometer, etc.). The objective is to predict the correct user_id for unseen sessions using motion behavior alone.
+This project aims to identify users based on mobile sensor behavior. Each user generates multiple sessions composed of raw motion sensor events. The task is to predict the correct user_id for unseen sessions using only behavioral signals.
 
-The solution follows a time-aware, leakage-safe pipeline that aggregates raw sensor events into robust session-level representations before classification.
+The solution follows a time-aware, leakage-safe pipeline that aggregates noisy event-level data into stable session-level representations.
 
 Key Principles
 
 Event → Window → Session aggregation
 
-Time-aware processing
+Time-aware feature extraction
 
-Sensor-specific feature extraction
+Sensor-specific modeling
 
 Session-level train/validation split (no leakage)
 
-Cross-validation for robustness (not model selection)
+Cross-validation for robustness
 
-Data Description
+Data & EDA
 
-Each row represents a sensor event
+Each row is a single sensor event
 
-Multiple sensor streams per session
+Sessions vary in length and sensor availability
 
-Sessions belong to a single user
+Individual events are noisy and not user-discriminative
 
-Strong temporal structure and variable-length sessions
+Key insight: User identity emerges only after temporal aggregation.
 
 Methodology
-1. Exploratory Data Analysis (EDA)
+Preprocessing
 
-Analyzed number of events per session and sessions per user
-
-Inspected raw sensor signals to understand noise and variability
-
-Confirmed class balance was sufficient for stratified evaluation
-
-Key insight:
-Individual sensor events are noisy; user identity emerges only after temporal aggregation.
-
-2. Preprocessing
-
-Converted timestamps to datetime
-
-Sorted events chronologically per session
+Converted timestamps and sorted events chronologically
 
 Mapped sensor IDs to semantic names
 
 Handled missing values consistently
 
-3. Train / Validation Split
+Train / Validation Split
 
 Performed session-level stratified splitting
 
-Ensured no (session_id, user_id) pair appears in both sets
+Ensured no (session_id, user_id) overlap between sets
 
-Prevented temporal and identity leakage
+Feature Engineering
 
-4. Feature Engineering
+Pivoted sensor streams into time-aligned format
 
-Pivoted sensor streams into time-aligned wide format
+Applied fixed 2-second windows
 
-Applied fixed 2-second temporal windows
-
-Extracted statistical features per window:
-
-Mean, std, min, max
-
-Skewness, kurtosis
-
-Signal energy
+Extracted statistical features (mean, std, min, max, skew, kurtosis, energy)
 
 Computed vector norms for 3-axis sensors
 
 Aggregated window features to session-level (mean + std)
 
-5. Modeling
+Modeling
 
-Used a Random Forest classifier:
+Used a Random Forest classifier
 
-Handles non-linear interactions
+Chosen for:
 
-Robust to noise and correlated features
+Non-linear modeling capacity
 
-Requires minimal feature scaling
+Robustness to noise and correlated features
 
-Trained on session-level features only
+Minimal preprocessing requirements
 
-6. Evaluation
+Evaluation
 
-Metrics used:
+Metrics:
 
 Accuracy
 
-Macro F1-score
+Macro F1
 
 Top-3 accuracy
 
 Top-5 accuracy
 
-Evaluation strategies:
+Evaluation strategy:
 
-Single train/validation split
+Single session-level validation split
 
-5-fold stratified cross-validation (robustness check)
+5-fold stratified cross-validation for stability
 
-Result:
-Consistent performance across folds, indicating strong generalization and no overfitting.
+Result: Consistent performance across folds, indicating good generalization and no leakage.
 
-7. Feature Importance & Iteration
+Feature Importance
 
-Computed feature importance across CV folds
+Computed cross-validated feature importance
 
-Aggregated importance at sensor level
+Aggregated importance by sensor type
 
-Performed feature selection using cumulative importance
+Feature selection improved Top-K accuracy with minor Top-1 trade-offs
 
-Observed:
+Baseline model retained for final submission
 
-Slight improvement in Top-K accuracy
+Test Inference
 
-Minor trade-off in Top-1 accuracy
+Applied identical pipeline to test data
 
-The baseline model was retained for final submission due to its better balance between precision and stability.
-
-8. Test Inference
-
-Applied the exact same pipeline to test data
-
-Aligned test features with training features
+Aligned features with training set
 
 Generated session-level user predictions
 
-Exported results in submission format
-
 Key Findings
 
-Behavioral patterns are user-specific and consistent
+Motion behavior contains stable, user-specific signatures
 
-Temporal aggregation is essential for identity recognition
+Temporal aggregation is essential for identification
 
-Motion sensors (accelerometer, magnetometer, gyroscope) contribute most
+Accelerometer, magnetometer, and gyroscope are most informative
 
-Random Forests perform well for this task without heavy tuning
-
-Business Applications
-
-Passive user authentication
-
-Continuous identity verification
-
-Fraud detection and anomaly monitoring
-
-Behavioral biometrics without explicit user input
-
-Reproducibility
-
-Deterministic splits (random_state=42)
-
-Clear separation between train, validation, and test
-
-Feature alignment safeguards prevent inference-time errors
-
-Files
-
-notebook.ipynb – full end-to-end pipeline
-
-submission.csv – final predictions
-
-README.md – project summary
+Random Forests perform strongly without heavy tuning
